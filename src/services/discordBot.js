@@ -56,6 +56,27 @@ client.on('messageCreate', async (message) => {
             message.reply('Solde insuffisant.');
         }
     }
+
+
+    // Nouvelle logique pour traquer les images
+    if (message.attachments.size > 0 && !message.content.startsWith('!')) {
+        const imageUrl = message.attachments.first().url;
+        const messageLink = `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`;
+        console.log(`Nouvelle image détectée - URL: ${imageUrl}, Lien: ${messageLink}`);
+
+        try {
+            // Vérifie si le mème existe déjà (basé sur le message ID ou l'URL)
+            const existingMeme = await Meme.findByMessageId(message.id);
+            if (!existingMeme) {
+                const memeId = await Meme.createFromDiscord(message.id, imageUrl, messageLink);
+                console.log(`Mème enregistré avec ID: ${memeId}`);
+            } else {
+                console.log('Mème déjà enregistré:', message.id);
+            }
+        } catch (error) {
+            console.error('Erreur lors de l’enregistrement du mème:', error.message);
+        }
+    }
 });
 
 // Vérification périodique des retweets
