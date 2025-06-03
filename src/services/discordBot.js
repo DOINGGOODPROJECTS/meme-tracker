@@ -58,6 +58,8 @@ client.on('messageCreate', async (message) => {
     }
 
     // Gère les commandes manuelles comme !link uniquement pour les utilisateurs humains
+    const args = message.content.split(' ');
+    const command = args[0].toLowerCase();
     if (!message.author.bot) {
         if (command === '!link') {
             const xHandle = args[1];
