@@ -17,55 +17,32 @@ client.on('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot || message.channel.id !== process.env.DISCORD_CHANNEL_ID) return;
+    console.log(`Message reçu: ${message.content} de ${message.author.tag} dans le salon ${message.channel.id}`);
 
-    const args = message.content.split(' ');
-    const command = args[0].toLowerCase();
-
-    if (command === '!link') {
-        const xHandle = args[1];
-        if (!xHandle) return message.reply('Veuillez fournir votre pseudo X (ex. : !link @username).');
-
-        const user = await User.findByDiscordId(message.author.id);
-        if (user) return message.reply('Votre compte est déjà lié.');
-
-        await User.create(message.author.id, xHandle);
-        message.reply(`Compte X ${xHandle} lié avec succès !`);
+    // Vérifie uniquement le salon, pas l'auteur
+    if (message.channel.id !== process.env.DISCORD_CHANNEL_ID) {
+        console.log(`Message ignoré: Mauvais salon (attendu: ${process.env.DISCORD_CHANNEL_ID}, reçu: ${message.channel.id})`);
+        return;
     }
 
-    if (command === '!balance') {
-        const user = await User.findByDiscordId(message.author.id);
-        if (!user) return message.reply('Veuillez d’abord lier votre compte X avec !link.');
+    console.log('Vérification des pièces jointes et embeds...');
+    let imageUrl = null;
+    let messageLink = `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`;
 
-        message.reply(`Votre solde de mèmecoins : ${user.memecoin_balance}`);
+    // Vérifie les pièces jointes
+    if (message.attachments.size > 0) {
+        imageUrl = message.attachments.first().url;
+        console.log(`Image trouvée dans les pièces jointes: ${imageUrl}`);
+    }
+    // Vérifie les embeds (cas des webhooks)
+    else if (message.embeds.length > 0 && message.embeds[0].image) {
+        imageUrl = message.embeds[0].image.url;
+        console.log(`Image trouvée dans un embed: ${imageUrl}`);
     }
 
-    if (command === '!redeem') {
-        const user = await User.findByDiscordId(message.author.id);
-        if (!user) return message.reply('Veuillez d’abord lier votre compte X avec !link.');
-
-        // Exemple : échanger 10 mèmecoins pour un rôle
-        const role = message.guild.roles.cache.find((r) => r.name === 'Mème Master');
-        if (!role) return message.reply('Rôle non trouvé.');
-
-        if (user.memecoin_balance >= 10) {
-            await User.updateBalance(user.id, -10);
-            await message.member.roles.add(role);
-            message.reply('Vous avez reçu le rôle Mème Master !');
-        } else {
-            message.reply('Solde insuffisant.');
-        }
-    }
-
-
-    // Nouvelle logique pour traquer les images
-    if (message.attachments.size > 0 && !message.content.startsWith('!')) {
-        const imageUrl = message.attachments.first().url;
-        const messageLink = `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`;
+    if (imageUrl) {
         console.log(`Nouvelle image détectée - URL: ${imageUrl}, Lien: ${messageLink}`);
-
         try {
-            // Vérifie si le mème existe déjà (basé sur le message ID ou l'URL)
             const existingMeme = await Meme.findByMessageId(message.id);
             if (!existingMeme) {
                 const memeId = await Meme.createFromDiscord(message.id, imageUrl, messageLink);
@@ -75,6 +52,46 @@ client.on('messageCreate', async (message) => {
             }
         } catch (error) {
             console.error('Erreur lors de l’enregistrement du mème:', error.message);
+        }
+    } else {
+        console.log('Aucune image détectée dans le message');
+    }
+
+    // Gère les commandes manuelles comme !link uniquement pour les utilisateurs humains
+    if (!message.author.bot) {
+        if (command === '!link') {
+            const xHandle = args[1];
+            if (!xHandle) return message.reply('Veuillez fournir votre pseudo X (ex. : !link @username).');
+
+            const user = await User.findByDiscordId(message.author.id);
+            if (user) return message.reply('Votre compte est déjà lié.');
+
+            await User.create(message.author.id, xHandle);
+            message.reply(`Compte X ${xHandle} lié avec succès !`);
+        }
+
+        if (command === '!balance') {
+            const user = await User.findByDiscordId(message.author.id);
+            if (!user) return message.reply('Veuillez d’abord lier votre compte X avec !link.');
+
+            message.reply(`Votre solde de mèmecoins : ${user.memecoin_balance}`);
+        }
+
+        if (command === '!redeem') {
+            const user = await User.findByDiscordId(message.author.id);
+            if (!user) return message.reply('Veuillez d’abord lier votre compte X avec !link.');
+
+            // Exemple : échanger 10 mèmecoins pour un rôle
+            const role = message.guild.roles.cache.find((r) => r.name === 'Mème Master');
+            if (!role) return message.reply('Rôle non trouvé.');
+
+            if (user.memecoin_balance >= 10) {
+                await User.updateBalance(user.id, -10);
+                await message.member.roles.add(role);
+                message.reply('Vous avez reçu le rôle Mème Master !');
+            } else {
+                message.reply('Solde insuffisant.');
+            }
         }
     }
 });
