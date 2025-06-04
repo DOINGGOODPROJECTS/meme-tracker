@@ -1,6 +1,4 @@
 const Meme = require('../models/Meme');
-const Transaction = require('../models/Transaction');
-const User = require('../models/User');
 
 class MemeController {
     static async addMeme(req, res) {

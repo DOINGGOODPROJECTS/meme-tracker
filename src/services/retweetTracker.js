@@ -1,19 +1,19 @@
 const fetch = require('node-fetch');
-const TweetInteraction = require('../models/TweetInteraction');
-const Transaction = require('../models/Transaction');
+const Interaction = require('../models/Interaction'); // Remplace TweetInteraction
 const User = require('../models/User');
 
 const startTrackingRetweets = () => {
     setInterval(async () => {
         console.log('Vérification des retweets...');
         try {
-            const interactions = await TweetInteraction.findAllToCheck();
+            const interactions = await Interaction.findAllToCheck(); // Remplace findAllToCheck
             if (!interactions.length) {
                 console.log('Aucun tweet à vérifier');
                 return;
             }
 
             const tweetIds = interactions.map(i => i.tweet_id).join(',');
+            console.log(`Requête API X pour tweetIds: ${tweetIds}`);
             const response = await fetch(
                 `https://api.x.com/2/tweets?ids=${tweetIds}&expansions=referenced_tweets.id`,
                 {
@@ -38,6 +38,7 @@ const startTrackingRetweets = () => {
             }
 
             const data = await response.json();
+            console.log('Données API X reçues:', JSON.stringify(data));
             if (data.data) {
                 for (const tweet of data.data) {
                     const interaction = interactions.find(i => i.tweet_id === tweet.id);
@@ -46,12 +47,14 @@ const startTrackingRetweets = () => {
                             if (refTweet.type === 'retweet') {
                                 const user = await User.findByXHandle(refTweet.author_id); // À adapter
                                 if (user) {
-                                    await Transaction.create(user.id, interaction.meme_id, 'retweet', 10);
+                                    await Interaction.create(interaction.meme_id, user.id, 'retweet', 10, tweet.id);
+                                    // Mise à jour explicite du solde (optionnel si géré dans Interaction.create)
+                                    await User.updateMemecoinBalance(user.id, 10);
                                 }
                             }
                         }
                     }
-                    await TweetInteraction.updateLastChecked(interaction.id);
+                    await Interaction.updateLastChecked(interaction.id); // Met à jour après vérification
                 }
             } else {
                 console.log('Aucune donnée de tweet trouvée');

@@ -1,6 +1,6 @@
 const Meme = require('../models/Meme');
 
-class Meme {
+class MemeService {
     static async createFromDiscord(messageId, imageUrl, messageLink) {
         try {
             const existingMeme = await Meme.findByMessageId(messageId);
