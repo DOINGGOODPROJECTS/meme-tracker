@@ -15,14 +15,7 @@ class InteractionService {
             const tweetIds = interactions.map(i => i.tweet_id).join(',');
             console.log(`Requête API X pour tweetIds: ${tweetIds}`);
 
-            const response = await fetch(
-                `https://api.x.com/2/tweets?ids=${tweetIds}&expansions=referenced_tweets.id`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${process.env.X_BEARER_TOKEN}`,
-                    },
-                }
-            );
+            const response = await fetch(`https://api.x.com/2/tweets?ids=${tweetIds}&expansions=referenced_tweets.id`, {headers: {Authorization: `Bearer ${process.env.X_BEARER_TOKEN}`,},});
 
             if (response.status === 429) {
                 const resetTime = parseInt(response.headers.get('x-rate-limit-reset')) * 1000;
@@ -63,7 +56,29 @@ class InteractionService {
                 console.log('Aucune donnée de tweet trouvée');
             }
         } catch (error) {
-            console.error('Erreur dans InteractionService.trackRetweets:', error.message);
+            console.error('Erreur dans InteractionService:', error.message);
+        }
+    }
+
+
+    static async associateTweetId(interactionId, tweetId) {
+        try {
+            await Interaction.updateTweetId(interactionId, tweetId); // Assume cette méthode existe
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de l’association du tweet_id à l’interaction:', error.message);
+            return false;
+        }
+    }
+
+
+    static async findByMemeId(memeId) {
+        try {
+            await Interaction.findByMemeId(memeId); // Assume cette méthode existe
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de la récuperation du Meme:', error.message);
+            return false;
         }
     }
 }

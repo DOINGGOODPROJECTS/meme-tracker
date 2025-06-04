@@ -27,6 +27,24 @@ class User {
             throw error;
         }
     }
+
+    static async updateMemecoinBalance(userId, memecoinsEarned) {
+        try {
+            const [result] = await pool.query(
+                'UPDATE users SET memecoin_balance = memecoin_balance + ? WHERE id = ?',
+                [memecoinsEarned, userId]
+            );
+            if (result.affectedRows === 0) {
+                console.error(`Aucun utilisateur trouvé avec l’ID ${userId}`);
+                throw new Error('Utilisateur non trouvé');
+            }
+            console.log(`Solde mis à jour pour l'utilisateur ID ${userId} : ${memecoinsEarned} mèmecoins ajoutés`);
+            return result.affectedRows;
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour du solde de mèmecoins:', error.message);
+            throw error;
+        }
+    }
 }
 
 module.exports = User;

@@ -12,15 +12,6 @@ class MemeService {
             throw error;
         }
     }
-
-    static async updateTweetId(memeId, tweetId) {
-        try {
-            await Meme.updateTweetId(memeId, tweetId);
-        } catch (error) {
-            console.error('Erreur dans MemeService.updateTweetId:', error.message);
-            throw error;
-        }
-    }
 }
 
 module.exports = MemeService;

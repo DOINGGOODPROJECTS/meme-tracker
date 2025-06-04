@@ -41,19 +41,10 @@ class Meme {
 
     static async findAll() {
         try {
-            const [rows] = await pool.query('SELECT id, message_id, tweet_id, image_url, message_link, created_at FROM memes');
+            const [rows] = await pool.query('SELECT id, message_id, image_url, message_link, created_at FROM memes');
             return rows;
         } catch (error) {
             console.error('Erreur lors de la récupération des mèmes:', error.message);
-            throw error;
-        }
-    }
-
-    static async updateTweetId(memeId, tweetId) {
-        try {
-            await pool.query('UPDATE memes SET tweet_id = ? WHERE id = ?', [tweetId, memeId]);
-        } catch (error) {
-            console.error('Erreur lors de la mise à jour du tweet_id:', error.message);
             throw error;
         }
     }

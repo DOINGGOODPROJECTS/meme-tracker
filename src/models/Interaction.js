@@ -16,6 +16,16 @@ class Interaction {
         }
     }
 
+    static async findByMemeId(memeId) {
+        try {
+            const [rows] = await pool.query('SELECT * FROM interactions WHERE meme_id = ? LIMIT 1', [memeId]);
+            return rows[0];
+        } catch (error) {
+            console.error('Erreur lors de la recherche de l’interaction par meme_id:', error.message);
+            throw error;
+        }
+    }
+
     static async findAllToCheck() {
         try {
             const [rows] = await pool.query(
@@ -37,6 +47,24 @@ class Interaction {
             console.log(`Interaction ${interactionId} marquée comme vérifiée`);
         } catch (error) {
             console.error('Erreur lors de la mise à jour de last_checked:', error.message);
+            throw error;
+        }
+    }
+
+    static async updateTweetId(interactionId, tweetId) {
+        try {
+            const [result] = await pool.query(
+                'UPDATE interactions SET tweet_id = ? WHERE id = ?',
+                [tweetId, interactionId]
+            );
+            if (result.affectedRows === 0) {
+                console.error('Aucune interaction trouvée avec l’ID:', interactionId);
+                throw new Error('Interaction non trouvée');
+            }
+            console.log(`Tweet ID ${tweetId} associé à l’interaction ID ${interactionId}`);
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour du tweet_id dans interactions:', error.message);
             throw error;
         }
     }
